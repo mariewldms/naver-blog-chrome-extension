@@ -9,8 +9,8 @@ window.addEventListener('message', (event) => {
   console.log('content.js: 메시지 타입:', event.data?.type);
   
   // BLOG_AUTO_INPUT 타입 메시지 처리
-  if (event.data?.type === 'BLOG_AUTO_INPUT' || event.data?.type === 'BLOG_AUTO_OUTPUT') {
-    console.log('content.js: BLOG_AUTO_INPUT, BLOG_AUTO_OUTPUT 메시지 감지:', event.data);
+  if (event.data?.type === 'BLOG_AUTO_INPUT') {
+    console.log('content.js: BLOG_AUTO_INPUT 메시지 감지:', event.data);
     
     // 메시지를 background script로 전달
     try {
@@ -42,6 +42,9 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (message.savedMessage) {
       console.log('content.js: 저장된 메시지 발견:', message.savedMessage);
       
+      // 작업 완료 여부를 추적하는 변수
+      let isCompleted = false;
+      
       // DOM 접근 및 텍스트 입력
       (async function() {
         // DOM이 로드되었는지 확인
@@ -59,6 +62,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           
           // iframe 로딩 대기
           iframe.onload = async function() {
+            // 이미 작업이 완료되었으면 다시 실행하지 않음
+            if (isCompleted) {
+              console.log('content.js: 이미 작업이 완료되었으므로 다시 실행하지 않습니다.');
+              return;
+            }
+            
             console.log('content.js: iframe 로딩 완료');
             
             const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -160,6 +169,49 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
                 console.log('content.js: 모든 작업 완료');
+                
+                // 발행 버튼 클릭
+                try {
+                  // 발행 버튼을 찾습니다 (클래스명 사용)
+                  const publishButton = iframeDoc.querySelector('.publish_btn__m9KHH');
+                  if (publishButton) {
+                    console.log('content.js: 발행 버튼 발견 (클래스명 사용)');
+                    
+                    // 1초 대기
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    // 발행 버튼 클릭
+                    publishButton.click();
+                    console.log('content.js: 발행 버튼 클릭 완료');
+                    
+                    // 2초 대기 (확인 버튼이 나타날 때까지)
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    // 확인 버튼 클릭 (data-testid 사용)
+                    const confirmButton = iframeDoc.querySelector('[data-testid="seOnePublishBtn"]');
+                    if (confirmButton) {
+                      console.log('content.js: 확인 버튼 발견 (data-testid 사용)');
+                      
+                      // 확인 버튼 클릭
+                      confirmButton.click();
+                      console.log('content.js: 확인 버튼 클릭 완료');
+                      
+                      // 작업 완료 플래그 설정
+                      isCompleted = true;
+                      console.log('content.js: 작업 완료 플래그 설정됨');
+                      
+                      // iframe의 onload 이벤트 핸들러 제거
+                      iframe.onload = null;
+                      console.log('content.js: iframe onload 이벤트 핸들러 제거됨');
+                    } else {
+                      console.log('content.js: 확인 버튼을 찾을 수 없습니다.');
+                    }
+                  } else {
+                    console.log('content.js: 발행 버튼을 찾을 수 없습니다.');
+                  }
+                } catch (error) {
+                  console.error('content.js: 버튼 클릭 중 오류 발생:', error);
+                }
               } else {
                 tries++;
                 if (tries >= maxTries) {
