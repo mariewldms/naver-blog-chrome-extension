@@ -1,37 +1,23 @@
 document.addEventListener('DOMContentLoaded', function() {
   console.log('popup.js: DOM이 로드되었습니다.');
   
-  // 요소 가져오기
-  const toggleSwitch = document.getElementById('extensionToggle');
+  // 상태 텍스트 요소 가져오기
   const statusText = document.getElementById('statusText');
   
-  // 저장된 활성화 상태 불러오기
-  chrome.storage.local.get(['extensionEnabled'], function(result) {
-    const isEnabled = result.extensionEnabled !== undefined ? result.extensionEnabled : false;
-    toggleSwitch.checked = isEnabled;
-    updateStatusText(isEnabled);
+  // 항상 활성화 상태로 설정
+  chrome.storage.local.set({ extensionEnabled: true }, function() {
+    console.log('popup.js: 확장프로그램 활성화 상태를 true로 설정했습니다.');
   });
   
-  // 토글 스위치 변경 이벤트 리스너
-  toggleSwitch.addEventListener('change', function() {
-    const isEnabled = toggleSwitch.checked;
-    console.log('popup.js: 확장프로그램 활성화 상태 변경:', isEnabled);
-    
-    // 활성화 상태 저장
-    chrome.storage.local.set({ extensionEnabled: isEnabled }, function() {
-      console.log('popup.js: 확장프로그램 활성화 상태 저장됨:', isEnabled);
-    });
-    
-    // 상태 텍스트 업데이트
-    updateStatusText(isEnabled);
-    
-    // background.js에 상태 변경 알림
-    chrome.runtime.sendMessage({
-      type: 'TOGGLE_EXTENSION',
-      enabled: isEnabled
-    }, function(response) {
-      console.log('popup.js: background.js로부터 응답 수신:', response);
-    });
+  // 상태 텍스트 업데이트
+  updateStatusText(true);
+  
+  // background.js에 활성화 상태 알림
+  chrome.runtime.sendMessage({
+    type: 'TOGGLE_EXTENSION',
+    enabled: true
+  }, function(response) {
+    console.log('popup.js: background.js로부터 응답 수신:', response);
   });
   
   // 상태 텍스트 업데이트 함수

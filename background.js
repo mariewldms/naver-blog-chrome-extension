@@ -28,9 +28,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-// 확장 프로그램이 설치되거나 업데이트될 때 실행됩니다
+// 확장프로그램이 설치되거나 업데이트될 때 실행
 chrome.runtime.onInstalled.addListener(function() {
-  console.log('background.js: 확장 프로그램이 설치되었습니다.');
+  console.log('background.js: 확장프로그램이 설치되었습니다.');
+  
+  // 항상 활성화 상태로 설정
+  chrome.storage.local.set({ extensionEnabled: true }, function() {
+    console.log('background.js: 확장프로그램을 항상 활성화 상태로 설정했습니다.');
+  });
 });
 
 // 탭이 업데이트될 때 실행됩니다
